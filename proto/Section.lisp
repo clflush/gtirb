@@ -266,6 +266,9 @@
                       (cl:ldb (cl:byte 64 0) (cl:aref v i))))))
   index)
 
+(cl:defvar *hack-section-read* cl:t
+  "Whether to apply the hack of section reading.")
+
 (cl:defmethod pb:merge-from-array ((self section) buffer start limit)
   (cl:declare (cl:type com.google.base:octet-vector buffer)
               (cl:type com.google.base:vector-index start limit))
@@ -306,6 +309,10 @@
           (cl:multiple-value-bind (value new-index)
               (varint:parse-int32-carefully buffer index limit)
             ;; XXXXX: when valid, set field, else add to unknown fields
+            (cl:when *hack-section-read*
+              (cl:case value
+                (3 (cl:incf new-index 3))
+                (4 (cl:incf new-index 4))))
             (cl:vector-push-extend value (cl:slot-value self 'section-flags))
             (cl:setf index new-index)))
         (cl:t
